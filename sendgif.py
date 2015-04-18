@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import requests,json,os,argparse
+import requests,json,os,argparse,sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument("to", help="Phone number or email that supports iMessage.")
@@ -14,21 +14,36 @@ else:
 
 BUDDY = args.to
 
+print("Starting")
+
 r = requests.get('http://api.giphy.com/v1/gifs/random?api_key=dc6zaTOxFJmzC&tag=' + GIPHY_TAG)
+
+print("Found awesome GIF")
+
 result = json.loads(r.text)
 gif_url = result['data']['image_original_url']
 
-gif = requests.get(gif_url)
 
+file_name = "giphy.gif"
+with open(file_name, "wb") as f:
+        response = requests.get(gif_url, stream=True)
+        total_length = response.headers.get('content-length')
+        mb = float(total_length) / 1048576
+        print('Downloading ' + str(round(mb,2)) + 'Mb..')
+        if total_length is None: # no content length header
+            f.write(response.content)
+        else:
+            dl = 0
+            total_length = int(total_length)
 
-gif_file = open('giphy.gif', 'w')
-gif_file.write(gif.content)
-gif_file.close()
-
+            for data in response.iter_content(100000):
+                dl += len(data)
+                f.write(data)
+                done = int(50 * dl / total_length)
+                sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)) )    
+                sys.stdout.flush()
 
 gif_file_path = os.path.dirname(os.path.realpath(__file__)) + '/giphy.gif'
-
-
 
 cmd = """osascript<<END
 set theAttachment to POSIX file "{0}"
@@ -41,7 +56,7 @@ tell application "Messages"
 end tell
 END"""
 
+print("\nSending..")
 cmd = cmd.format(gif_file_path,BUDDY)
-
 
 os.system(cmd)
