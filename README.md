@@ -6,5 +6,6 @@ Make sure you have Python and "requests" lib installed: http://docs.python-reque
 
 ## Usage
 
-`./sendgif.py -t "kitten" example@example.com`
+`./sendgif.py -t kitten example@example.com`
 
+`./sendgif.py -t "cute cats" +79270000000`
